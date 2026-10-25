@@ -18,12 +18,23 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static uploads directory
-const uploadsPath = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsPath)) {
-  fs.mkdirSync(uploadsPath, { recursive: true });
+// Static uploads directory (supports both local and Vercel serverless /tmp)
+const isVercel = Boolean(process.env.VERCEL);
+const uploadsPath = isVercel ? path.join('/tmp', 'uploads') : path.join(__dirname, 'uploads');
+const bundledUploadsPath = path.join(__dirname, 'uploads');
+
+try {
+  if (!fs.existsSync(uploadsPath)) {
+    fs.mkdirSync(uploadsPath, { recursive: true });
+  }
+} catch (err) {
+  console.warn('Could not create uploads directory:', err.message);
 }
+
 app.use('/uploads', express.static(uploadsPath));
+if (isVercel && fs.existsSync(bundledUploadsPath)) {
+  app.use('/uploads', express.static(bundledUploadsPath));
+}
 
 // API Routes
 app.use('/api/auth', authRouter);
@@ -252,6 +263,11 @@ async function start() {
   });
 }
 
-start().catch(err => {
-  console.error('Failed to start server:', err);
-});
+// Start server standalone (local or persistent cloud), or export app for Vercel Serverless Functions
+module.exports = app;
+
+if (require.main === module || !process.env.VERCEL) {
+  start().catch(err => {
+    console.error('Failed to start server:', err);
+  });
+}

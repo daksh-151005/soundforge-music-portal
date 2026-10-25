@@ -7,9 +7,17 @@
     "start": "node server/index.js",
     "server": "node server/index.js",
     "client": "npm --prefix client run dev",
-    "build": "npm --prefix client run build",
+    "build": "npm --prefix client install && npm --prefix client run build",
     "build:all": "npm --prefix server install && npm --prefix client install && npm --prefix client run build",
     "install:all": "npm --prefix server install && npm --prefix client install"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.5.0",
+    "uuid": "^14.0.3"
   },
   "keywords": ["music", "artist", "audio", "voice-memo", "producer", "streaming"],
   "author": "Daksh",

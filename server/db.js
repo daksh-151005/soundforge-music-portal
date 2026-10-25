@@ -2,12 +2,18 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-const DATA_DIR = path.join(__dirname, 'data');
+const isVercel = Boolean(process.env.VERCEL);
+const DATA_DIR = isVercel ? path.join('/tmp', 'data') : path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
+const BUNDLED_DB_FILE = path.join(__dirname, 'data', 'db.json');
 
 // Ensure directories exist
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.warn('Could not create DATA_DIR:', err.message);
 }
 
 const DEFAULT_STATE = {
@@ -20,6 +26,15 @@ const DEFAULT_STATE = {
 function readDb() {
   try {
     if (!fs.existsSync(DB_FILE)) {
+      if (isVercel && fs.existsSync(BUNDLED_DB_FILE)) {
+        try {
+          const initialData = fs.readFileSync(BUNDLED_DB_FILE, 'utf-8');
+          fs.writeFileSync(DB_FILE, initialData, 'utf-8');
+          return JSON.parse(initialData);
+        } catch (copyErr) {
+          console.warn('Could not copy bundled DB to /tmp:', copyErr.message);
+        }
+      }
       writeDb(DEFAULT_STATE);
       return DEFAULT_STATE;
     }

@@ -7,13 +7,18 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const { requireArtist, requireAuth, authenticateOptional } = require('../middleware/auth');
 
-const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
+const isVercel = Boolean(process.env.VERCEL);
+const UPLOADS_DIR = isVercel ? path.join('/tmp', 'uploads') : path.join(__dirname, '..', 'uploads');
 const AUDIO_DIR = path.join(UPLOADS_DIR, 'audio');
 const COVERS_DIR = path.join(UPLOADS_DIR, 'covers');
 
 [UPLOADS_DIR, AUDIO_DIR, COVERS_DIR].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (err) {
+    console.warn('Could not create directory:', err.message);
   }
 });
 
